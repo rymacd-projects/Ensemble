@@ -1,3 +1,4 @@
+<img width="1089" height="1058" alt="Screenshot 2026-11-24 at 6 51 54 PM" src="https://github.com/user-attachments/assets/f6fa48c9-77da-418a-a76a-5314ee3ab689" />
 # Ensemble
 
 A black-and-blue music app for your Mac. Keep all your songs in one Spotify-style library, organize them into playlists, post them to beat and distribution sites, and check them for samples.
