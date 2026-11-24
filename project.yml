@@ -1,0 +1,41 @@
+name: Ensemble
+options:
+  bundleIdPrefix: com.ensemble
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+targets:
+  Ensemble:
+    type: application
+    platform: macOS
+    sources:
+      - path: Ensemble
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.ensemble.app
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        # Ad-hoc signing: lets anyone build and run it locally without an Apple Developer account.
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGN_IDENTITY: "-"
+        DEVELOPMENT_TEAM: ""
+        ENABLE_HARDENED_RUNTIME: NO
+        COMBINE_HIDPI_IMAGES: YES
+    entitlements:
+      path: Ensemble/Ensemble.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.files.user-selected.read-write: true
+        com.apple.security.network.client: true
+    info:
+      path: Ensemble/Info.plist
+      properties:
+        CFBundleDisplayName: Ensemble
+        CFBundleName: Ensemble
+        LSApplicationCategoryType: public.app-category.music
+        LSMinimumSystemVersion: "14.0"
+        NSHumanReadableCopyright: "Ensemble"
