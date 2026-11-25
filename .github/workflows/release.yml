@@ -1,0 +1,39 @@
+name: Release
+
+# Push a tag such as v1.0.1 to publish a ready-to-run Ensemble.zip on GitHub.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build
+        run: |
+          xcodebuild build \
+            -project Ensemble.xcodeproj \
+            -scheme Ensemble \
+            -configuration Release \
+            -destination 'platform=macOS' \
+            -derivedDataPath build
+
+      - name: Zip the app
+        run: ditto -c -k --keepParent build/Build/Products/Release/Ensemble.app Ensemble.zip
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: Ensemble.zip
+          generate_release_notes: true

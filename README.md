@@ -15,16 +15,16 @@ Requires a Mac running macOS 14 (Sonoma) or newer, and the free Xcode app from t
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
-**3. Download Ensemble.** Paste this, replacing `YOUR-USERNAME` with the GitHub account that owns the repo:
+**3. Download Ensemble.** Paste this:
 
 ```bash
-cd ~/Documents && git clone https://github.com/YOUR-USERNAME/Ensemble.git && cd Ensemble
+cd ~/Documents && git clone https://github.com/rymacd-projects/Ensemble.git && cd Ensemble
 ```
 
 **4. Build and install it:**
 
 ```bash
-./scripts/install.sh
+bash scripts/install.sh
 ```
 
 This builds Ensemble, puts it in your **Applications** folder, adds an **Ensemble** shortcut with the icon to your **Desktop**, and opens it. The first build takes a few minutes.
@@ -38,7 +38,7 @@ From then on, just double-click Ensemble on your Desktop. You never need Termina
 Double-click **Update Ensemble.command** inside the `Ensemble` folder in your Documents, or paste:
 
 ```bash
-cd ~/Documents/Ensemble && ./scripts/update.sh
+cd ~/Documents/Ensemble && bash scripts/update.sh
 ```
 
 ## Using Ensemble

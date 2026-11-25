@@ -3,4 +3,4 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 git pull --ff-only
-./scripts/install.sh
+bash scripts/install.sh

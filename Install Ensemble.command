@@ -1,5 +1,5 @@
 #!/bin/bash
 cd "$(dirname "$0")"
-./scripts/install.sh
+bash scripts/install.sh
 echo ""
 read -n 1 -s -r -p "Press any key to close this window."
