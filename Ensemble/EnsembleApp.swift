@@ -6,6 +6,7 @@ struct EnsembleApp: App {
     @StateObject private var player = PlayerService()
     @StateObject private var uploader = UploadService()
     @StateObject private var themes = ThemeStore.shared
+    @StateObject private var columns = ColumnLayout()
 
     var body: some Scene {
         WindowGroup {
@@ -14,7 +15,8 @@ struct EnsembleApp: App {
                 .environmentObject(player)
                 .environmentObject(uploader)
                 .environmentObject(themes)
-                .frame(minWidth: 1240, minHeight: 700)
+                .environmentObject(columns)
+                .frame(minWidth: 900, minHeight: 600)
                 .preferredColorScheme(.dark)
                 .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
                     library.saveNow()

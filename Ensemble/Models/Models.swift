@@ -43,6 +43,9 @@ struct Song: Identifiable, Codable, Hashable {
     /// Free-form text from the editable Notes column. Optional so libraries saved
     /// before this column existed still load.
     var userNotes: String?
+    /// Text typed into columns you added yourself, keyed by column id. Optional so older
+    /// libraries still load.
+    var customValues: [String: String]?
 
     var url: URL { Paths.audio.appendingPathComponent(audioFile) }
     var artURL: URL { Paths.art.appendingPathComponent("\(id.uuidString).jpg") }
@@ -57,6 +60,20 @@ struct Song: Identifiable, Codable, Hashable {
     }
 
     var displayName: String { creativeName.isEmpty ? originalName : creativeName }
+
+    /// The text a column shows for this song (used for sorting, searching and fitting widths).
+    func columnText(_ columnID: String) -> String {
+        switch columnID {
+        case "creative": return displayName
+        case "original": return originalName
+        case "bpm": return bpm.map(String.init) ?? ""
+        case "time": return formatTime(duration)
+        case "date": return dateAdded.formatted(date: .abbreviated, time: .omitted)
+        case "uploaded": return uploadSummary
+        case "notes": return userNotes ?? ""
+        default: return customValues?[columnID] ?? ""
+        }
+    }
 }
 
 struct Playlist: Identifiable, Codable, Hashable {

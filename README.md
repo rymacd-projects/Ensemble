@@ -46,6 +46,9 @@ cd ~/Documents/Ensemble && bash scripts/update.sh
 ### Your Music
 - **Add songs:** drag audio files (or whole folders) into the window, or press **Import** (Cmd+O).
 - New songs appear at the top. Each song gets: the **original file name** (locked), an **AI-generated creative name** (click to edit), **BPM** and **time** (locked), **date added**, an **Uploaded to** column that fills in with the sites you've posted it to, and a **Notes** column (click to type your own notes).
+- **Rearrange columns:** drag a column heading left or right. **Resize:** drag the edge between headings; **double-click the edge** to fit the column to its longest text, like a spreadsheet. Right-click a heading for more (Fit, Reset Column Layout).
+- **Add your own column:** press the **+** at the right end of the headings, name it anything, then type a value for each song. Right-click your column's heading to rename or delete it.
+- **Resizable window:** make the window small and the sidebar shrinks to icons; the list scrolls sideways if the columns are wider than the window. Make it large for more room.
 - **Click a column heading** to sort ascending, and again for descending. Click the arrows icon at the top-left of the list to return to your own order (newest on top).
 - **Double-click** a row to play it. Hover over the artwork for a play button.
 - **Rearrange:** drag a song up or down the list (grab it anywhere except the two text fields). A blue line shows where it will land, and the empty strip under the last song sends it to the bottom. Right-click and choose **Move** for to top / up / down / to bottom. Drag a song onto a playlist in the sidebar to add it. Reordering is off while the list is sorted or searched.

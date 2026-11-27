@@ -8,6 +8,7 @@ This Linux workspace cannot compile Swift. After any change, push to GitHub and 
 - `Ensemble/EnsembleApp.swift`: app entry, menu commands, Settings scene
 - `Ensemble/Theme.swift`: ten color palettes (`Palette`), `ThemeStore` (selected theme, saved in UserDefaults, picked from the Theme menu), `Theme` colors (`blue` = main accent, `cyan` = lighter accent), glass panel, button styles
 - `Ensemble/Models/Models.swift`: `Song`, `Playlist`, `UploadRecord`, `Paths`
+- `Ensemble/Models/ColumnLayout.swift`: `ColumnSpec` + `ColumnLayout` (column order, widths, user-added `custom:<uuid>` columns; saved in UserDefaults key `columnLayout.v1`). `Song.columnText(id)` is the single source of text per column; custom values live in optional `Song.customValues`. LibraryView headers: drag to reorder, `ResizeHandle` drag to resize / double-click to fit. Window min is 900x600; RootView uses a compact sidebar under 1000pt wide.
 - `Ensemble/Services/LibraryStore.swift`: import, drag-drop handling, editing, playlists, cover art, JSON persistence
 - `Ensemble/Services/PlayerService.swift`: AVPlayer queue, shuffle/repeat, keyboard shortcuts (NSEvent monitor; ignores sheets, panels, text fields)
 - `Ensemble/Services/BPMDetector.swift`: tempo estimate

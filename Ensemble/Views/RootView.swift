@@ -15,12 +15,15 @@ struct RootView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 0) {
-                SidebarView(destination: $destination)
-                    .frame(width: 232)
-                Rectangle().fill(Theme.hairline).frame(width: 1)
-                content
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            GeometryReader { geo in
+                let compact = geo.size.width < 1000   // narrow window: icons-only sidebar
+                HStack(spacing: 0) {
+                    SidebarView(destination: $destination, compact: compact)
+                        .frame(width: compact ? 72 : 232)
+                    Rectangle().fill(Theme.hairline).frame(width: 1)
+                    content
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
             }
             Rectangle().fill(Theme.hairline).frame(height: 1)
             PlayerBar()
@@ -65,6 +68,7 @@ struct RootView: View {
 
 struct SidebarView: View {
     @Binding var destination: Destination
+    var compact = false
     @EnvironmentObject private var library: LibraryStore
 
     @State private var showNewPlaylist = false
@@ -79,12 +83,15 @@ struct SidebarView: View {
                 Image(nsImage: NSApp.applicationIconImage)
                     .resizable()
                     .frame(width: 34, height: 34)
-                Text("Ensemble")
-                    .font(.system(size: 20, weight: .bold, design: .rounded))
-                    .foregroundStyle(Theme.gradient)
+                if !compact {
+                    Text("Ensemble")
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .foregroundStyle(Theme.gradient)
+                }
             }
+            .frame(maxWidth: .infinity, alignment: compact ? .center : .leading)
             .padding(.top, 38)
-            .padding(.horizontal, 18)
+            .padding(.horizontal, compact ? 0 : 18)
             .padding(.bottom, 22)
 
             VStack(spacing: 4) {
@@ -95,10 +102,12 @@ struct SidebarView: View {
             .padding(.horizontal, 10)
 
             HStack {
-                Text("PLAYLISTS")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(Theme.textSecondary)
-                Spacer()
+                if !compact {
+                    Text("PLAYLISTS")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(Theme.textSecondary)
+                    Spacer()
+                }
                 Button {
                     newPlaylistName = ""
                     showNewPlaylist = true
@@ -110,7 +119,8 @@ struct SidebarView: View {
                 .foregroundStyle(Theme.cyan)
                 .help("New playlist")
             }
-            .padding(.horizontal, 18)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, compact ? 0 : 18)
             .padding(.top, 26)
             .padding(.bottom, 8)
 
@@ -119,7 +129,7 @@ struct SidebarView: View {
                     ForEach(library.playlists) { playlist in
                         playlistRow(playlist)
                     }
-                    if library.playlists.isEmpty {
+                    if library.playlists.isEmpty && !compact {
                         Text("Create a playlist with +, then drag songs onto it.")
                             .font(.system(size: 12))
                             .foregroundStyle(Theme.textSecondary)
@@ -158,10 +168,13 @@ struct SidebarView: View {
                 Image(systemName: icon)
                     .frame(width: 22)
                     .foregroundStyle(selected ? Theme.cyan : Theme.textSecondary)
-                Text(title)
-                    .font(.system(size: 14, weight: selected ? .semibold : .medium))
-                Spacer()
+                if !compact {
+                    Text(title)
+                        .font(.system(size: 14, weight: selected ? .semibold : .medium))
+                    Spacer()
+                }
             }
+            .frame(maxWidth: .infinity, alignment: compact ? .center : .leading)
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
             .background(RoundedRectangle(cornerRadius: 8).fill(selected ? Theme.blue.opacity(0.22) : .clear))
@@ -169,6 +182,7 @@ struct SidebarView: View {
         }
         .buttonStyle(.plain)
         .foregroundStyle(selected ? Theme.textPrimary : Theme.textSecondary)
+        .help(title)
     }
 
     private func playlistRow(_ playlist: Playlist) -> some View {
@@ -180,14 +194,17 @@ struct SidebarView: View {
                 Image(systemName: "music.note.list")
                     .frame(width: 22)
                     .foregroundStyle(selected ? Theme.cyan : Theme.textSecondary)
-                Text(playlist.name)
-                    .font(.system(size: 13, weight: selected ? .semibold : .regular))
-                    .lineLimit(1)
-                Spacer()
-                Text("\(playlist.songIDs.count)")
-                    .font(.system(size: 11))
-                    .foregroundStyle(Theme.textSecondary)
+                if !compact {
+                    Text(playlist.name)
+                        .font(.system(size: 13, weight: selected ? .semibold : .regular))
+                        .lineLimit(1)
+                    Spacer()
+                    Text("\(playlist.songIDs.count)")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Theme.textSecondary)
+                }
             }
+            .frame(maxWidth: .infinity, alignment: compact ? .center : .leading)
             .padding(.horizontal, 10)
             .padding(.vertical, 7)
             .background(RoundedRectangle(cornerRadius: 8)
@@ -196,6 +213,7 @@ struct SidebarView: View {
         }
         .buttonStyle(.plain)
         .foregroundStyle(selected ? Theme.textPrimary : Theme.textSecondary)
+        .help(playlist.name)
         .onDrop(of: [.plainText], isTargeted: Binding(
             get: { dropTarget == playlist.id },
             set: { dropTarget = $0 ? playlist.id : (dropTarget == playlist.id ? nil : dropTarget) }
