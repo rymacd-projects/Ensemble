@@ -24,6 +24,11 @@ final class PlayerService: ObservableObject {
     @Published var shuffle = false { didSet { if shuffle != oldValue { rebuildOrder() } } }
     @Published var repeatMode: RepeatMode = .off
     @Published var volume: Double = 0.8 { didSet { player.volume = Float(volume) } }
+    /// Loudness of each pitch band over time for the current song (drives the wave bars).
+    @Published private(set) var spectrum: SpectrumData?
+
+    private var spectrumCache: [UUID: SpectrumData] = [:]
+    private var spectrumTask: Task<Void, Never>?
 
     private var queue: [Song] = []
     private var order: [Int] = []
@@ -85,6 +90,12 @@ final class PlayerService: ObservableObject {
         }
     }
 
+    /// Exact playback position right now (smoother than `currentTime`, which updates 4 times a second).
+    func liveTime() -> Double {
+        let t = player.currentTime().seconds
+        return t.isFinite ? t : currentTime
+    }
+
     func seek(to seconds: Double) {
         let upper = duration > 0 ? duration : seconds
         let target = min(max(0, seconds), upper)
@@ -102,6 +113,8 @@ final class PlayerService: ObservableObject {
         isPlaying = false
         currentTime = 0
         duration = 0
+        spectrumTask?.cancel()
+        spectrum = nil
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
     }
 
@@ -136,10 +149,29 @@ final class PlayerService: ObservableObject {
         }
     }
 
+    private func loadSpectrum(for song: Song) {
+        spectrumTask?.cancel()
+        if let cached = spectrumCache[song.id] {
+            spectrum = cached
+            return
+        }
+        spectrum = nil
+        let url = song.url
+        let id = song.id
+        spectrumTask = Task { [weak self] in
+            let data = await Task.detached(priority: .utility) { SpectrumAnalyzer.analyze(url: url) }.value
+            guard let self, !Task.isCancelled, let data, self.currentID == id else { return }
+            if self.spectrumCache.count >= 6 { self.spectrumCache.removeAll() }
+            self.spectrumCache[id] = data
+            self.spectrum = data
+        }
+    }
+
     private func load(_ song: Song) {
         currentID = song.id
         duration = song.duration
         currentTime = 0
+        loadSpectrum(for: song)
 
         let item = AVPlayerItem(url: song.url)
         if let endObserver { NotificationCenter.default.removeObserver(endObserver) }

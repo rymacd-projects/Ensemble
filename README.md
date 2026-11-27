@@ -77,7 +77,7 @@ Limits to know about:
 - Needs an internet connection.
 
 ### Themes
-Open the **Theme** menu at the top of the screen and pick one of ten colors (four blues, three reds, three greens). The choice is remembered. The bar at the bottom shows soft moving sound waves while music plays.
+Open the **Theme** menu at the top of the screen and pick one of ten colors (four blues, three reds, three greens). The choice is remembered. The bar at the bottom has soft bars that rise and fall with the music as it plays.
 
 ### Creative names
 Without any setup, Ensemble invents names offline. For names written by Claude, open **Ensemble > Settings** (Cmd+,) and paste an Anthropic API key. Only the file name, BPM and length are sent, never the audio.

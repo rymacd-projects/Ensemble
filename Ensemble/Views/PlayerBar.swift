@@ -94,7 +94,7 @@ struct PlayerBar: View {
         .background(
             ZStack {
                 LinearGradient(colors: [Theme.panel, Theme.background], startPoint: .top, endPoint: .bottom)
-                WaveBackground(isPlaying: player.isPlaying)
+                WaveBackground(isPlaying: player.isPlaying, spectrum: player.spectrum, player: player)
                     .allowsHitTesting(false)
             }
         )
@@ -107,30 +107,40 @@ struct PlayerBar: View {
     }
 }
 
-/// Soft, translucent equalizer-style waves behind the player bar. They move while music plays.
+/// Soft, translucent bars behind the player bar. Each bar stays in place and rises and falls
+/// with one pitch band of the music that is playing (low notes on the left, high on the right).
 struct WaveBackground: View {
     let isPlaying: Bool
+    let spectrum: SpectrumData?
+    let player: PlayerService
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !isPlaying)) { timeline in
-            let t = timeline.date.timeIntervalSinceReferenceDate
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !isPlaying)) { _ in
+            let time = player.liveTime()
             Canvas { context, size in
                 let barWidth: CGFloat = 3
                 let step: CGFloat = 7
-                let count = Int(size.width / step)
+                let count = max(2, Int(size.width / step))
                 let midY = size.height / 2
-                let gradient = Gradient(colors: [Theme.cyan.opacity(0.30), Theme.blue.opacity(0.10)])
+                let gradient = Gradient(colors: [Theme.cyan.opacity(0.28), Theme.blue.opacity(0.12)])
                 let shading = GraphicsContext.Shading.linearGradient(
                     gradient,
                     startPoint: CGPoint(x: 0, y: 0),
                     endPoint: CGPoint(x: size.width, y: 0))
 
                 for i in 0..<count {
-                    let phase = Double(i)
-                    let moving = abs(sin(phase * 0.21 + t * 1.8)) * 0.55 + abs(sin(phase * 0.07 - t * 1.1)) * 0.45
-                    let resting = 0.22 + 0.14 * abs(sin(phase * 0.21))
-                    let level = isPlaying ? moving : resting
-                    let height = max(4, CGFloat(level) * size.height * 0.85)
+                    var level: CGFloat = 0
+                    if let spectrum {
+                        let position = Double(i) / Double(count - 1) * Double(spectrum.bands - 1)
+                        let low = Int(position)
+                        let high = min(low + 1, spectrum.bands - 1)
+                        let blend = Float(position - Double(low))
+                        let a = spectrum.level(at: time, band: low)
+                        let b = spectrum.level(at: time, band: high)
+                        level = CGFloat(a + (b - a) * blend)
+                    }
+                    // A thin resting line, growing to about half the bar's height at the loudest.
+                    let height = 4 + level * size.height * 0.5
                     let rect = CGRect(x: CGFloat(i) * step, y: midY - height / 2,
                                       width: barWidth, height: height)
                     context.fill(Path(roundedRect: rect, cornerRadius: barWidth / 2), with: shading)

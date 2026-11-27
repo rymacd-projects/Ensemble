@@ -11,6 +11,7 @@ This Linux workspace cannot compile Swift. After any change, push to GitHub and 
 - `Ensemble/Services/LibraryStore.swift`: import, drag-drop handling, editing, playlists, cover art, JSON persistence
 - `Ensemble/Services/PlayerService.swift`: AVPlayer queue, shuffle/repeat, keyboard shortcuts (NSEvent monitor; ignores sheets, panels, text fields)
 - `Ensemble/Services/BPMDetector.swift`: tempo estimate
+- `Ensemble/Services/SpectrumAnalyzer.swift`: per-song loudness of 48 pitch bands over time (FFT), computed when a song starts; `PlayerBar`'s `WaveBackground` reads it at the live playback time
 - `Ensemble/Services/NameGenerator.swift`: creative names (Claude API if a key is saved in Keychain, otherwise offline)
 - `Ensemble/Services/CoverArt.swift`: crop/convert to 3000x3000 JPEG plus thumbnail
 - `Ensemble/Services/SampleFinder.swift`: ShazamKit windowed scan, WhoSampled and Google link builders
