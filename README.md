@@ -82,6 +82,17 @@ Open the **Theme** menu at the top of the screen and pick one of ten colors (fou
 ### Creative names
 Without any setup, Ensemble invents names offline. For names written by Claude, open **Ensemble > Settings** (Cmd+,) and paste an Anthropic API key. Only the file name, BPM and length are sent, never the audio.
 
+## Automatic updates
+
+Installing Ensemble also turns on a small background updater. Every couple of minutes it checks GitHub. When a new version has been published it builds it quietly, then **closes Ensemble (saving your library first), installs the update and reopens it**. If you weren't using Ensemble, it just installs the update. A notification tells you when it's done.
+
+- Your Mac must be awake and online. If a new version fails to build, nothing changes and you keep the current one.
+- It may briefly stop the music when it restarts the app.
+- The first time, macOS may say a background item was added. That's the updater.
+- Log: `~/Library/Logs/Ensemble-update.log`
+- Turn it off: `bash ~/Documents/Ensemble/scripts/disable-auto-update.sh`
+- Turn it back on: `bash ~/Documents/Ensemble/scripts/enable-auto-update.sh`
+
 ## For developers
 
 Everything is generated from `project.yml` with [XcodeGen](https://github.com/yonaskolb/XcodeGen), so the `.xcodeproj` is never committed. Edit code, then:

@@ -53,6 +53,9 @@ rm -f "$HOME/Desktop/Ensemble"
 osascript -e 'tell application "Finder" to make new alias file to POSIX file "/Applications/Ensemble.app" at desktop' >/dev/null 2>&1 \
   || ln -sf /Applications/Ensemble.app "$HOME/Desktop/Ensemble"
 
+echo "==> Turning on automatic updates"
+bash scripts/enable-auto-update.sh || echo "(Couldn't turn on automatic updates. Ensemble is installed and works fine.)"
+
 echo ""
 echo "Done! Ensemble is in your Applications folder and on your Desktop."
 echo "From now on, just double-click it. No Terminal needed."

@@ -27,6 +27,10 @@ struct RootView: View {
         }
         .id(themes.selectedID)   // redraw everything in the new colors
         .background(Theme.background)
+        .onAppear {
+            // Lets the background updater close Ensemble safely (it saves first).
+            QuitSignal.install { library.saveNow() }
+        }
         .fileImporter(isPresented: $library.showImporter,
                       allowedContentTypes: [.audio, .folder],
                       allowsMultipleSelection: true) { result in

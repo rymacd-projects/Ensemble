@@ -17,7 +17,9 @@ This Linux workspace cannot compile Swift. After any change, push to GitHub and 
 - `Ensemble/Services/SampleFinder.swift`: ShazamKit windowed scan, WhoSampled and Google link builders
 - `Ensemble/Services/UploadService.swift`: `Platform` (BeatStars, Traktrain, Airbit, DistroKid; URLs live here), linked-account state, `WebSession` (WKWebView that answers file pickers with the song or cover)
 - `Ensemble/Views/`: SwiftUI screens (`RootView`, `LibraryView`, `PlayerBar`, `UploadView`, `SamplesView`, `SettingsView`, `Components`)
-- `scripts/install.sh`, `scripts/update.sh`: build and install to /Applications plus Desktop alias
+- `scripts/install.sh`, `scripts/update.sh`: build and install to /Applications plus Desktop alias; install also runs `enable-auto-update.sh`
+- `scripts/auto-update.sh` (+ `enable-auto-update.sh`, `disable-auto-update.sh`): launchd agent on the user's Mac, every 2 min. Works in its own clone under ~/Library/Application Support/EnsembleUpdater (avoids Documents permission prompts), builds new `origin/main` commits, sends SIGTERM to Ensemble, swaps /Applications/Ensemble.app and reopens it. Skips a commit that fails to build.
+- `Ensemble/Services/QuitSignal.swift`: turns SIGTERM into a normal quit so the library is saved
 - `.github/workflows/`: `build.yml` (every push), `release.yml` (tags `v*`)
 
 ## Things to remember
@@ -31,4 +33,5 @@ This Linux workspace cannot compile Swift. After any change, push to GitHub and 
 1. Edit the Swift files or `project.yml`.
 2. Commit and push to `main`; wait for CI.
 3. For a downloadable build: bump `MARKETING_VERSION` in `project.yml`, push, then tag `vX.Y.Z`.
-4. Users update by running `Update Ensemble.command` or `scripts/update.sh`.
+4. On the user's Mac the background updater picks up the new commit within a few minutes, restarts Ensemble on its own, and shows a notification. A green CI run is still the check that it compiles; the updater also refuses to swap in a build that fails locally. Manual update: `Update Ensemble.command` or `scripts/update.sh`.
+5. This workspace cannot close or reopen the user's Mac apps, so never promise to do that directly; the updater does it.
