@@ -45,10 +45,10 @@ cd ~/Documents/Ensemble && bash scripts/update.sh
 
 ### Your Music
 - **Add songs:** drag audio files (or whole folders) into the window, or press **Import** (Cmd+O).
-- Each song gets: the **original file name**, an **AI-generated creative name**, **BPM**, **time**, **date added**, and a **notes** column that fills in with the sites you've posted it to.
-- **Click any name or BPM and type** to edit it. Click a column heading to sort. Click the arrows icon at the top-left of the list to return to your own order.
+- New songs appear at the top. Each song gets: the **original file name** (locked), an **AI-generated creative name** (click to edit), **BPM** and **time** (locked), **date added**, an **Uploaded to** column that fills in with the sites you've posted it to, and a **Notes** column (click to type your own notes).
+- **Click a column heading** to sort ascending, and again for descending. Click the arrows icon at the top-left of the list to return to your own order (newest on top).
 - **Double-click** a row to play it. Hover over the artwork for a play button.
-- **Rearrange:** drag a song by its artwork onto another row to move it. Drag it onto a playlist in the sidebar to add it.
+- **Rearrange:** drag a song up or down the list (grab it anywhere except the two text fields). A blue line shows where it will land, and the empty strip under the last song sends it to the bottom. Right-click and choose **Move** for to top / up / down / to bottom. Drag a song onto a playlist in the sidebar to add it. Reordering is off while the list is sorted or searched.
 - **Playlists:** press **+** in the sidebar. Right-click a playlist to rename or delete it.
 - **Cover art:** drag a picture onto a song's row, or right-click the artwork and choose **Choose Cover Art…**. Ensemble crops it square and converts it to **3000×3000** (the size Spotify asks for). Right-click again to export it.
 
@@ -75,6 +75,9 @@ Limits to know about:
 - WhoSampled doesn't offer a lookup service for apps, so Ensemble opens its search in your browser rather than reading it automatically.
 - Shazam recognizes songs in its catalog. Chopped, pitched or layered samples and obscure records are often missed. Treat results as leads, not legal clearance.
 - Needs an internet connection.
+
+### Themes
+Open the **Theme** menu at the top of the screen and pick one of ten colors (four blues, three reds, three greens). The choice is remembered. The bar at the bottom shows soft moving sound waves while music plays.
 
 ### Creative names
 Without any setup, Ensemble invents names offline. For names written by Claude, open **Ensemble > Settings** (Cmd+,) and paste an Anthropic API key. Only the file name, BPM and length are sent, never the audio.

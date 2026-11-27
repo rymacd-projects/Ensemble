@@ -154,9 +154,9 @@ struct UploadView: View {
                                 Text(song.displayName)
                                     .font(.system(size: 13, weight: .semibold))
                                     .lineLimit(1)
-                                Text(song.notes.isEmpty ? song.originalName : song.notes)
+                                Text(song.uploadSummary.isEmpty ? song.originalName : song.uploadSummary)
                                     .font(.system(size: 11))
-                                    .foregroundStyle(song.notes.isEmpty ? Theme.textSecondary : Theme.cyan)
+                                    .foregroundStyle(song.uploadSummary.isEmpty ? Theme.textSecondary : Theme.cyan)
                                     .lineLimit(1)
                             }
                             Spacer()

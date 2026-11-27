@@ -6,7 +6,7 @@ This Linux workspace cannot compile Swift. After any change, push to GitHub and 
 
 ## Layout
 - `Ensemble/EnsembleApp.swift`: app entry, menu commands, Settings scene
-- `Ensemble/Theme.swift`: colors, glass panel, button styles
+- `Ensemble/Theme.swift`: ten color palettes (`Palette`), `ThemeStore` (selected theme, saved in UserDefaults, picked from the Theme menu), `Theme` colors (`blue` = main accent, `cyan` = lighter accent), glass panel, button styles
 - `Ensemble/Models/Models.swift`: `Song`, `Playlist`, `UploadRecord`, `Paths`
 - `Ensemble/Services/LibraryStore.swift`: import, drag-drop handling, editing, playlists, cover art, JSON persistence
 - `Ensemble/Services/PlayerService.swift`: AVPlayer queue, shuffle/repeat, keyboard shortcuts (NSEvent monitor; ignores sheets, panels, text fields)
@@ -20,6 +20,8 @@ This Linux workspace cannot compile Swift. After any change, push to GitHub and 
 - `.github/workflows/`: `build.yml` (every push), `release.yml` (tags `v*`)
 
 ## Things to remember
+- Library order: new songs and songs added to a playlist go to the top. Old libraries are migrated once (`orderVersion`). `Song` fields added later must be optional so old `library.json` files still decode.
+- Original name, BPM and time are read-only in the list; creative name and Notes (`userNotes`) are editable. `uploadSummary` is the automatic "Uploaded to" text.
 - The four upload sites have no public upload API. Uploads are semi-automatic: an in-app browser opens the upload form and supplies the file; the user presses Publish and "Mark uploaded". If an official API appears, add it behind `Platform`.
 - WhoSampled has no public API, so it is opened as a search link. Sample detection is ShazamKit; it needs an internet connection and may need Shazam enabled for the app's bundle ID if matching errors appear.
 - The user wants a custom app icon (`Ensemble/Resources/Assets.xcassets/AppIcon.appiconset`, source `icon-1024.png`).

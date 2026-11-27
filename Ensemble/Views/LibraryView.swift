@@ -1,12 +1,16 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// Column widths shared by the header and every row so they line up.
+/// Column sizes shared by the header and every row so they line up.
 enum Col {
     static let art: CGFloat = 52
     static let bpm: CGFloat = 64
     static let time: CGFloat = 64
     static let date: CGFloat = 108
+    static let creativeMin: CGFloat = 160
+    static let originalMin: CGFloat = 130
+    static let uploadedMin: CGFloat = 110
+    static let notesMin: CGFloat = 140
 }
 
 struct LibraryView: View {
@@ -15,13 +19,14 @@ struct LibraryView: View {
     @EnvironmentObject private var library: LibraryStore
     @EnvironmentObject private var player: PlayerService
 
-    enum SortKey { case manual, creative, original, bpm, duration, added }
+    enum SortKey { case manual, creative, original, bpm, duration, added, uploaded, notes }
 
     @State private var sortKey: SortKey = .manual
     @State private var ascending = true
     @State private var search = ""
     @State private var selection: UUID?
     @State private var dropTargeted = false
+    @State private var endDropTargeted = false
     @State private var songToDelete: Song?
 
     private var playlist: Playlist? {
@@ -38,7 +43,7 @@ struct LibraryView: View {
         var list = baseSongs
         if !search.isEmpty {
             list = list.filter { song in
-                [song.creativeName, song.originalName, song.notes]
+                [song.creativeName, song.originalName, song.uploadSummary, song.userNotes ?? ""]
                     .contains { $0.localizedCaseInsensitiveContains(search) }
             }
         }
@@ -52,11 +57,14 @@ struct LibraryView: View {
         case .bpm: list.sort { ($0.bpm ?? 0) < ($1.bpm ?? 0) }
         case .duration: list.sort { $0.duration < $1.duration }
         case .added: list.sort { $0.dateAdded < $1.dateAdded }
+        case .uploaded: list.sort { before($0.uploadSummary, $1.uploadSummary) }
+        case .notes: list.sort { before($0.userNotes ?? "", $1.userNotes ?? "") }
         }
         if sortKey != .manual && !ascending { list.reverse() }
         return list
     }
 
+    /// Dragging songs up and down only makes sense in your own order (not while sorted or searching).
     private var canReorder: Bool { sortKey == .manual && search.isEmpty }
 
     var body: some View {
@@ -80,6 +88,16 @@ struct LibraryView: View {
                                     onSelect: { selection = song.id },
                                     onDelete: { songToDelete = song })
                         }
+                        // Drop a song here to send it to the very bottom.
+                        Rectangle()
+                            .fill(endDropTargeted ? Theme.cyan : Color.clear)
+                            .frame(height: endDropTargeted ? 3 : 48)
+                            .contentShape(Rectangle())
+                            .onDrop(of: [.plainText],
+                                    delegate: EndDropDelegate(playlistID: playlistID,
+                                                              canReorder: canReorder,
+                                                              library: library,
+                                                              targeted: $endDropTargeted))
                     }
                     .padding(.bottom, 20)
                 }
@@ -139,6 +157,11 @@ struct LibraryView: View {
                     Text("\(songs.count) song\(songs.count == 1 ? "" : "s") · \(durationText(total))")
                         .font(.system(size: 13))
                         .foregroundStyle(Theme.textSecondary)
+                    if !canReorder {
+                        Text("Dragging to reorder is off while sorted or searching. Press the ⇅ button to go back to your own order.")
+                            .font(.system(size: 11))
+                            .foregroundStyle(Theme.textSecondary)
+                    }
                 }
                 Spacer()
                 HStack(spacing: 8) {
@@ -199,18 +222,19 @@ struct LibraryView: View {
             } label: {
                 Image(systemName: "arrow.up.arrow.down")
                     .foregroundStyle(sortKey == .manual ? Theme.cyan : Theme.textSecondary)
+                    .frame(width: Col.art, alignment: .leading)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .help("Manual order (drag songs to rearrange)")
-            .frame(width: Col.art)
+            .help("Your own order (newest on top). Drag songs to rearrange.")
 
-            headerButton("Creative name", .creative).frame(minWidth: 170, maxWidth: .infinity, alignment: .leading)
-            headerButton("Original name", .original).frame(minWidth: 150, maxWidth: .infinity, alignment: .leading)
-            headerButton("BPM", .bpm).frame(width: Col.bpm, alignment: .leading)
-            headerButton("Time", .duration).frame(width: Col.time, alignment: .leading)
-            headerButton("Date added", .added).frame(width: Col.date, alignment: .leading)
-            Text("NOTES")
-                .frame(minWidth: 130, maxWidth: .infinity, alignment: .leading)
+            sortHeader("Creative name", .creative, min: Col.creativeMin)
+            sortHeader("Original name", .original, min: Col.originalMin)
+            sortHeader("BPM", .bpm, fixed: Col.bpm)
+            sortHeader("Time", .duration, fixed: Col.time)
+            sortHeader("Date added", .added, fixed: Col.date)
+            sortHeader("Uploaded to", .uploaded, min: Col.uploadedMin)
+            sortHeader("Notes", .notes, min: Col.notesMin)
         }
         .font(.system(size: 11, weight: .semibold))
         .foregroundStyle(Theme.textSecondary)
@@ -218,7 +242,8 @@ struct LibraryView: View {
         .padding(.vertical, 8)
     }
 
-    private func headerButton(_ title: String, _ key: SortKey) -> some View {
+    /// Click once to sort ascending, again for descending.
+    private func sortHeader(_ title: String, _ key: SortKey, fixed: CGFloat? = nil, min: CGFloat = 0) -> some View {
         Button {
             if sortKey == key {
                 ascending.toggle()
@@ -235,8 +260,11 @@ struct LibraryView: View {
                 }
             }
             .foregroundStyle(sortKey == key ? Theme.cyan : Theme.textSecondary)
+            .frame(minWidth: fixed ?? min, maxWidth: fixed ?? .infinity, alignment: .leading)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .help("Click to sort. Click again to reverse.")
     }
 
     private var emptyState: some View {
@@ -281,6 +309,7 @@ struct SongRow: View {
     @EnvironmentObject private var library: LibraryStore
     @EnvironmentObject private var player: PlayerService
     @State private var hovering = false
+    @State private var dropTargeted = false
 
     private var isCurrent: Bool { player.currentID == song.id }
 
@@ -289,28 +318,28 @@ struct SongRow: View {
             artCell
                 .frame(width: Col.art, alignment: .leading)
 
+            // Editable: the creative name.
             TextField(library.analyzing.contains(song.id) ? "Naming…" : "Untitled",
-                      text: binding(\.creativeName))
+                      text: creativeNameBinding)
                 .textFieldStyle(.plain)
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(isCurrent ? Theme.cyan : Theme.textPrimary)
                 .editableChrome()
-                .frame(minWidth: 170, maxWidth: .infinity, alignment: .leading)
+                .frame(minWidth: Col.creativeMin, maxWidth: .infinity, alignment: .leading)
 
-            TextField("Original name", text: binding(\.originalName))
-                .textFieldStyle(.plain)
+            // Locked: original file name, BPM, time, date.
+            Text(song.originalName)
                 .font(.system(size: 13))
                 .foregroundStyle(Theme.textSecondary)
-                .editableChrome()
-                .frame(minWidth: 150, maxWidth: .infinity, alignment: .leading)
+                .lineLimit(1)
+                .help("\(song.originalName) (locked)")
+                .frame(minWidth: Col.originalMin, maxWidth: .infinity, alignment: .leading)
 
             Group {
                 if library.analyzing.contains(song.id) && song.bpm == nil {
                     ProgressView().controlSize(.small)
                 } else {
-                    TextField("—", text: bpmBinding)
-                        .textFieldStyle(.plain)
-                        .editableChrome()
+                    Text(song.bpm.map(String.init) ?? "—")
                 }
             }
             .font(.system(size: 13).monospacedDigit())
@@ -327,12 +356,21 @@ struct SongRow: View {
                 .foregroundStyle(Theme.textSecondary)
                 .frame(width: Col.date, alignment: .leading)
 
-            Text(song.notes)
+            // Filled in automatically when you post the song to a site.
+            Text(song.uploadSummary)
                 .font(.system(size: 12))
                 .foregroundStyle(Theme.cyan.opacity(0.9))
                 .lineLimit(1)
-                .help(song.notes)
-                .frame(minWidth: 130, maxWidth: .infinity, alignment: .leading)
+                .help(song.uploadSummary)
+                .frame(minWidth: Col.uploadedMin, maxWidth: .infinity, alignment: .leading)
+
+            // Editable: your own notes.
+            TextField("Add a note", text: notesBinding)
+                .textFieldStyle(.plain)
+                .font(.system(size: 12))
+                .foregroundStyle(Theme.textPrimary)
+                .editableChrome()
+                .frame(minWidth: Col.notesMin, maxWidth: .infinity, alignment: .leading)
         }
         .padding(.horizontal, 28)
         .padding(.vertical, 6)
@@ -340,6 +378,12 @@ struct SongRow: View {
             Rectangle().fill(isSelected ? Theme.blue.opacity(0.28)
                              : (hovering ? Theme.blue.opacity(0.10) : .clear))
         )
+        .overlay(alignment: .top) {
+            // Shows where a dragged song will land.
+            if dropTargeted {
+                Rectangle().fill(Theme.cyan).frame(height: 2)
+            }
+        }
         .contentShape(Rectangle())
         .onHover { hovering = $0 }
         // Double-click anywhere that isn't a text field plays the song.
@@ -348,9 +392,22 @@ struct SongRow: View {
             NSApp.keyWindow?.makeFirstResponder(nil)
             onSelect()
         }
+        // Drag the row (grab anywhere outside the two text fields) to reorder it
+        // or drop it onto a playlist in the sidebar.
+        .onDrag({
+            NSItemProvider(object: song.id.uuidString as NSString)
+        }, preview: {
+            Text(song.displayName)
+                .font(.system(size: 13, weight: .semibold))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Capsule().fill(Theme.blue))
+                .foregroundStyle(.white)
+        })
         .onDrop(of: [.plainText, .fileURL],
                 delegate: RowDropDelegate(songID: song.id, playlistID: playlistID,
-                                          canReorder: canReorder, library: library))
+                                          canReorder: canReorder, library: library,
+                                          targeted: $dropTargeted))
         .contextMenu { menu }
     }
 
@@ -372,8 +429,6 @@ struct SongRow: View {
                 .buttonStyle(.plain)
             }
         }
-        // Drag from the artwork to move the song or add it to a playlist.
-        .onDrag { NSItemProvider(object: song.id.uuidString as NSString) }
         .contextMenu {
             Button("Choose Cover Art…") { chooseCover() }
             if song.hasArt {
@@ -381,7 +436,7 @@ struct SongRow: View {
                 Button("Remove Cover Art", role: .destructive) { library.removeCover(for: song.id) }
             }
         }
-        .help("Drag to rearrange or add to a playlist. Drop a picture on this row for cover art.")
+        .help("Drop a picture on this row to set the cover art.")
     }
 
     @ViewBuilder
@@ -399,6 +454,14 @@ struct SongRow: View {
         }
         if let playlistID {
             Button("Remove from This Playlist") { library.remove(song.id, fromPlaylist: playlistID) }
+        }
+        if canReorder {
+            Menu("Move") {
+                Button("To Top") { library.reposition(song.id, .top, in: playlistID) }
+                Button("Up") { library.reposition(song.id, .up, in: playlistID) }
+                Button("Down") { library.reposition(song.id, .down, in: playlistID) }
+                Button("To Bottom") { library.reposition(song.id, .bottom, in: playlistID) }
+            }
         }
         Divider()
         Button("Choose Cover Art…") { chooseCover() }
@@ -430,22 +493,21 @@ struct SongRow: View {
         }
     }
 
-    private func binding(_ keyPath: WritableKeyPath<Song, String>) -> Binding<String> {
-        Binding(get: { song[keyPath: keyPath] },
-                set: { newValue in library.update(song.id) { $0[keyPath: keyPath] = newValue } })
+    private var creativeNameBinding: Binding<String> {
+        Binding(get: { song.creativeName },
+                set: { newValue in library.update(song.id) { $0.creativeName = newValue } })
     }
 
-    private var bpmBinding: Binding<String> {
-        Binding(get: { song.bpm.map(String.init) ?? "" },
+    private var notesBinding: Binding<String> {
+        Binding(get: { song.userNotes ?? "" },
                 set: { newValue in
-                    let digits = newValue.filter(\.isNumber)
-                    library.update(song.id) { $0.bpm = Int(digits) }
+                    library.update(song.id) { $0.userNotes = newValue.isEmpty ? nil : newValue }
                 })
     }
 }
 
 private extension View {
-    /// Faint field background so it's clear names can be clicked and edited.
+    /// Faint field background so it's clear which fields can be clicked and edited.
     func editableChrome() -> some View {
         self.padding(.horizontal, 6)
             .padding(.vertical, 4)

@@ -100,18 +100,27 @@ enum DropLoader {
     }
 }
 
-/// Dropping on a song row: songs reorder, images become cover art, audio files import.
+/// Dropping on a song row: songs reorder (landing just above this row), images become
+/// cover art, audio files import.
 struct RowDropDelegate: DropDelegate {
     let songID: UUID
     let playlistID: UUID?
     let canReorder: Bool
     let library: LibraryStore
+    @Binding var targeted: Bool
 
     func validateDrop(info: DropInfo) -> Bool {
         info.hasItemsConforming(to: [.fileURL]) || (canReorder && info.hasItemsConforming(to: [.plainText]))
     }
 
+    func dropEntered(info: DropInfo) {
+        if canReorder && info.hasItemsConforming(to: [.plainText]) { targeted = true }
+    }
+
+    func dropExited(info: DropInfo) { targeted = false }
+
     func performDrop(info: DropInfo) -> Bool {
+        targeted = false
         if info.hasItemsConforming(to: [.fileURL]) {
             DropLoader.fileURLs(from: info.itemProviders(for: [.fileURL])) { urls in
                 Task { await library.handleDrop(urls, target: songID) }
@@ -122,6 +131,31 @@ struct RowDropDelegate: DropDelegate {
         _ = provider.loadObject(ofClass: NSString.self) { object, _ in
             guard let text = object as? String, let dragged = UUID(uuidString: text) else { return }
             Task { @MainActor in library.move(dragged, before: songID, in: playlistID) }
+        }
+        return true
+    }
+}
+
+/// The empty strip under the last song: drop here to move a song to the very bottom.
+struct EndDropDelegate: DropDelegate {
+    let playlistID: UUID?
+    let canReorder: Bool
+    let library: LibraryStore
+    @Binding var targeted: Bool
+
+    func validateDrop(info: DropInfo) -> Bool {
+        canReorder && info.hasItemsConforming(to: [.plainText])
+    }
+
+    func dropEntered(info: DropInfo) { targeted = true }
+    func dropExited(info: DropInfo) { targeted = false }
+
+    func performDrop(info: DropInfo) -> Bool {
+        targeted = false
+        guard let provider = info.itemProviders(for: [.plainText]).first else { return false }
+        _ = provider.loadObject(ofClass: NSString.self) { object, _ in
+            guard let text = object as? String, let dragged = UUID(uuidString: text) else { return }
+            Task { @MainActor in library.reposition(dragged, .bottom, in: playlistID) }
         }
         return true
     }

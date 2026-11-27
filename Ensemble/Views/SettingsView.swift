@@ -3,9 +3,32 @@ import AppKit
 
 struct SettingsView: View {
     @State private var apiKey = Keychain.get(NameGenerator.keyAccount) ?? ""
+    @ObservedObject private var themes = ThemeStore.shared
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Theme").font(.headline)
+                Text("Also in the Theme menu at the top of the screen.")
+                    .font(.system(size: 12))
+                    .foregroundStyle(Theme.textSecondary)
+                LazyVGrid(columns: Array(repeating: GridItem(.fixed(34), spacing: 10), count: 10), spacing: 10) {
+                    ForEach(Palette.all) { palette in
+                        Circle()
+                            .fill(LinearGradient(colors: [palette.secondary, palette.primary],
+                                                 startPoint: .topLeading, endPoint: .bottomTrailing))
+                            .frame(width: 30, height: 30)
+                            .overlay(Circle().strokeBorder(Color.white,
+                                                           lineWidth: themes.selectedID == palette.id ? 2.5 : 0))
+                            .contentShape(Circle())
+                            .onTapGesture { themes.selectedID = palette.id }
+                            .help(palette.name)
+                    }
+                }
+            }
+
+            Divider()
+
             VStack(alignment: .leading, spacing: 6) {
                 Text("Creative names")
                     .font(.headline)
@@ -34,7 +57,7 @@ struct SettingsView: View {
             Spacer()
         }
         .padding(24)
-        .frame(width: 480, height: 320)
+        .frame(width: 480, height: 440)
         .background(Theme.background)
     }
 }

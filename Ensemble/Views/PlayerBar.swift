@@ -92,7 +92,11 @@ struct PlayerBar: View {
         .padding(.vertical, 12)
         .frame(height: 84)
         .background(
-            LinearGradient(colors: [Theme.panel, Theme.background], startPoint: .top, endPoint: .bottom)
+            ZStack {
+                LinearGradient(colors: [Theme.panel, Theme.background], startPoint: .top, endPoint: .bottom)
+                WaveBackground(isPlaying: player.isPlaying)
+                    .allowsHitTesting(false)
+            }
         )
     }
 
@@ -100,5 +104,38 @@ struct PlayerBar: View {
         guard let song else { return "Space plays/pauses · Enter restarts · ←/→ skip 5s" }
         if let bpm = song.bpm { return "\(bpm) BPM · \(song.originalName)" }
         return song.originalName
+    }
+}
+
+/// Soft, translucent equalizer-style waves behind the player bar. They move while music plays.
+struct WaveBackground: View {
+    let isPlaying: Bool
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !isPlaying)) { timeline in
+            let t = timeline.date.timeIntervalSinceReferenceDate
+            Canvas { context, size in
+                let barWidth: CGFloat = 3
+                let step: CGFloat = 7
+                let count = Int(size.width / step)
+                let midY = size.height / 2
+                let gradient = Gradient(colors: [Theme.cyan.opacity(0.30), Theme.blue.opacity(0.10)])
+                let shading = GraphicsContext.Shading.linearGradient(
+                    gradient,
+                    startPoint: CGPoint(x: 0, y: 0),
+                    endPoint: CGPoint(x: size.width, y: 0))
+
+                for i in 0..<count {
+                    let phase = Double(i)
+                    let moving = abs(sin(phase * 0.21 + t * 1.8)) * 0.55 + abs(sin(phase * 0.07 - t * 1.1)) * 0.45
+                    let resting = 0.22 + 0.14 * abs(sin(phase * 0.21))
+                    let level = isPlaying ? moving : resting
+                    let height = max(4, CGFloat(level) * size.height * 0.85)
+                    let rect = CGRect(x: CGFloat(i) * step, y: midY - height / 2,
+                                      width: barWidth, height: height)
+                    context.fill(Path(roundedRect: rect, cornerRadius: barWidth / 2), with: shading)
+                }
+            }
+        }
     }
 }

@@ -5,6 +5,7 @@ struct EnsembleApp: App {
     @StateObject private var library = LibraryStore()
     @StateObject private var player = PlayerService()
     @StateObject private var uploader = UploadService()
+    @StateObject private var themes = ThemeStore.shared
 
     var body: some Scene {
         WindowGroup {
@@ -12,7 +13,8 @@ struct EnsembleApp: App {
                 .environmentObject(library)
                 .environmentObject(player)
                 .environmentObject(uploader)
-                .frame(minWidth: 1100, minHeight: 700)
+                .environmentObject(themes)
+                .frame(minWidth: 1240, minHeight: 700)
                 .preferredColorScheme(.dark)
                 .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
                     library.saveNow()
@@ -23,6 +25,16 @@ struct EnsembleApp: App {
             CommandGroup(replacing: .newItem) {
                 Button("Import Music…") { library.showImporter = true }
                     .keyboardShortcut("o")
+            }
+            CommandMenu("Theme") {
+                Picker("Theme", selection: $themes.selectedID) {
+                    ForEach(Palette.blues) { Text($0.name).tag($0.id) }
+                    Divider()
+                    ForEach(Palette.reds) { Text($0.name).tag($0.id) }
+                    Divider()
+                    ForEach(Palette.greens) { Text($0.name).tag($0.id) }
+                }
+                .pickerStyle(.inline)
             }
         }
 

@@ -10,6 +10,7 @@ enum Destination: Hashable {
 
 struct RootView: View {
     @EnvironmentObject private var library: LibraryStore
+    @EnvironmentObject private var themes: ThemeStore
     @State private var destination: Destination = .library
 
     var body: some View {
@@ -24,6 +25,7 @@ struct RootView: View {
             Rectangle().fill(Theme.hairline).frame(height: 1)
             PlayerBar()
         }
+        .id(themes.selectedID)   // redraw everything in the new colors
         .background(Theme.background)
         .fileImporter(isPresented: $library.showImporter,
                       allowedContentTypes: [.audio, .folder],

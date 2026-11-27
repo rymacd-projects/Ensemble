@@ -40,13 +40,16 @@ struct Song: Identifiable, Codable, Hashable {
     /// Bumped each time the cover changes so cached thumbnails refresh.
     var artRevision = 0
     var uploads: [UploadRecord] = []
+    /// Free-form text from the editable Notes column. Optional so libraries saved
+    /// before this column existed still load.
+    var userNotes: String?
 
     var url: URL { Paths.audio.appendingPathComponent(audioFile) }
     var artURL: URL { Paths.art.appendingPathComponent("\(id.uuidString).jpg") }
     var thumbURL: URL { Paths.art.appendingPathComponent("\(id.uuidString)_thumb.jpg") }
 
-    /// Shown in the Notes column once the song has been posted somewhere.
-    var notes: String {
+    /// Shown in the "Uploaded to" column once the song has been posted somewhere.
+    var uploadSummary: String {
         guard !uploads.isEmpty else { return "" }
         var seen = Set<String>()
         let names = uploads.map(\.platform).filter { seen.insert($0).inserted }

@@ -32,13 +32,15 @@ final class LibraryStore: ObservableObject {
     /// Imports audio files (and folders of them). Images are ignored here.
     func importFiles(_ urls: [URL]) async {
         var failed: [String] = []
+        var insertAt = 0   // newest songs go to the top, keeping the order they were dropped in
         for url in expand(urls) {
             let scoped = url.startAccessingSecurityScopedResource()
             defer { if scoped { url.stopAccessingSecurityScopedResource() } }
             guard Self.audioExtensions.contains(url.pathExtension.lowercased()) else { continue }
             do {
                 let song = try await makeSong(from: url)
-                songs.append(song)
+                songs.insert(song, at: insertAt)
+                insertAt += 1
                 analyze(song.id)
             } catch {
                 failed.append(url.lastPathComponent)
@@ -195,6 +197,34 @@ final class LibraryStore: ObservableObject {
         scheduleSave()
     }
 
+    enum Position { case top, bottom, up, down }
+
+    /// Moves a song to the top or bottom, or one step up or down, in the library or a playlist.
+    func reposition(_ id: UUID, _ position: Position, in playlistID: UUID?) {
+        func destination(from: Int, count: Int) -> Int {
+            switch position {
+            case .top: return 0
+            case .bottom: return count - 1
+            case .up: return max(0, from - 1)
+            case .down: return min(count - 1, from + 1)
+            }
+        }
+        if let playlistID, let p = playlists.firstIndex(where: { $0.id == playlistID }) {
+            var ids = playlists[p].songIDs
+            guard let from = ids.firstIndex(of: id) else { return }
+            let to = destination(from: from, count: ids.count)
+            guard to != from else { return }
+            ids.insert(ids.remove(at: from), at: to)
+            playlists[p].songIDs = ids
+        } else {
+            guard let from = songs.firstIndex(where: { $0.id == id }) else { return }
+            let to = destination(from: from, count: songs.count)
+            guard to != from else { return }
+            songs.insert(songs.remove(at: from), at: to)
+        }
+        scheduleSave()
+    }
+
     @discardableResult
     func createPlaylist(named name: String) -> Playlist {
         let playlist = Playlist(name: name.isEmpty ? "New Playlist" : name)
@@ -217,7 +247,7 @@ final class LibraryStore: ObservableObject {
     func add(_ songID: UUID, toPlaylist id: UUID) {
         guard let i = playlists.firstIndex(where: { $0.id == id }),
               !playlists[i].songIDs.contains(songID) else { return }
-        playlists[i].songIDs.append(songID)
+        playlists[i].songIDs.insert(songID, at: 0)   // newest on top, like the library
         scheduleSave()
     }
 
@@ -232,6 +262,8 @@ final class LibraryStore: ObservableObject {
     private struct Snapshot: Codable {
         var songs: [Song]
         var playlists: [Playlist]
+        /// 1 = songs are stored newest first. Missing in older saves.
+        var orderVersion: Int?
     }
 
     private func load() {
@@ -239,6 +271,11 @@ final class LibraryStore: ObservableObject {
               let snapshot = try? JSONDecoder().decode(Snapshot.self, from: data) else { return }
         songs = snapshot.songs.filter { FileManager.default.fileExists(atPath: $0.url.path) }
         playlists = snapshot.playlists
+        if snapshot.orderVersion == nil {
+            // Older libraries were stored oldest first. Show the newest song on top.
+            songs.sort { $0.dateAdded > $1.dateAdded }
+            scheduleSave()
+        }
     }
 
     /// Saves shortly after the last change so typing in a name field doesn't write on every key.
@@ -252,7 +289,7 @@ final class LibraryStore: ObservableObject {
     }
 
     func saveNow() {
-        let snapshot = Snapshot(songs: songs, playlists: playlists)
+        let snapshot = Snapshot(songs: songs, playlists: playlists, orderVersion: 1)
         guard let data = try? JSONEncoder().encode(snapshot) else { return }
         try? data.write(to: Paths.library, options: .atomic)
     }
